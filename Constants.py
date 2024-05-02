@@ -5,8 +5,8 @@ import numpy as np
 NUM_OF_LATTICES = 1
 
 # Lattice:
-LATTICE = (4, 4, 4, 8)
-LATTICE_1D = (16)
+LATTICE = (8, 8, 8, 16)
+LATTICE_SMALL = (4, 4, 4, 8)
 
 # Field dimensions
 GAUGE_DOF = 3
@@ -14,7 +14,6 @@ NON_GAUGE_DOF = 4
 
 # PTC pathes:
 PTC_PATHES = [[0], [1], [-1], [2], [-2], [3], [-3], [4], [-4]]
-PTC_PATHES_1D = [[0], [1], [-1]]
 
 # Wilson Dirac constants
 I_4 = torch.eye(4).to(torch.complex128)
@@ -25,7 +24,6 @@ GAMMA = torch.tensor(data).to(torch.complex128)
 # Gauge-Field; shape(4,8,8,8,16,3,3)
 data = np.load("npy_files/U.npy").tolist()
 GAUGE_FIELD = torch.tensor(data).to(torch.complex128)
-GAUGE_FIELD_1D = GAUGE_FIELD[2:3,0,0,0]
 
 # Gauge-Field; shape(4,4,4,4,8,3,3)
 GAUGE_FIELD_SMALL = torch.empty(4, 4, 4, 4, 8, 3, 3, dtype=torch.complex128)

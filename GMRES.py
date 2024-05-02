@@ -45,7 +45,7 @@ def gmres(operator, b, preconditioner=None, x0=None, k=100, tol=1e-3, print_res=
         y_i = torch.linalg.lstsq(H[:i_index + 2, :i_index + 1], e1).solution
         res = torch.norm(torch.matmul(H[:i_index + 2, :i_index + 1], y_i) - e1)
         if print_res:
-            print(f"Res: {res:.3f}")
+            print(f"Res: {res:.3e}")
             clear_output(wait=True)
         res_list.append(res.item())
         if res < tol:
@@ -95,4 +95,4 @@ class GmresTest:
         plt.ylabel('Residual')
         plt.title("Residual - Plot")
         plt.grid(True)
-        plt.show()
+        # plt.show()
