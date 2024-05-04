@@ -16,17 +16,17 @@ NON_GAUGE_DOF = 4
 PTC_PATHES = [[0], [1], [-1], [2], [-2], [3], [-3], [4], [-4]]
 
 # Wilson Dirac constants
-I_4 = torch.eye(4).to(torch.complex128)
-M = (-0.6 * I_4).to(torch.complex128)
+I_4 = torch.eye(4).to(torch.complex64)
+M = (-0.6 * I_4).to(torch.complex64)
 data = np.load("npy_files/gamma_matrices.npy").tolist()
-GAMMA = torch.tensor(data).to(torch.complex128)
+GAMMA = torch.tensor(data).to(torch.complex64)
 
 # Gauge-Field; shape(4,8,8,8,16,3,3)
 data = np.load("npy_files/U.npy").tolist()
-GAUGE_FIELD = torch.tensor(data).to(torch.complex128)
+GAUGE_FIELD = torch.tensor(data).to(torch.complex64)
 
 # Gauge-Field; shape(4,4,4,4,8,3,3)
-GAUGE_FIELD_SMALL = torch.empty(4, 4, 4, 4, 8, 3, 3, dtype=torch.complex128)
+GAUGE_FIELD_SMALL = torch.empty(4, 4, 4, 4, 8, 3, 3, dtype=torch.complex64)
 for i in range(4):
     direction = [1 if j == i else 0 for j in range(4)]
     for x in range(4):
@@ -41,9 +41,9 @@ for i in range(4):
 
 # Wilson-clover constants
 C_SW = 1.0
-SIGMA = torch.empty(4, 4, 4, 4, dtype=torch.complex128)
+SIGMA = torch.empty(4, 4, 4, 4, dtype=torch.complex64)
 for i in range(4):
     for j in range(4):
         SIGMA[i][j] = (1 / 2) * (torch.matmul(GAMMA[i], GAMMA[j]) - torch.matmul(GAMMA[j], GAMMA[i]))
         
-one_random_field = torch.rand(1, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex128)
+one_random_field = torch.rand(1, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)

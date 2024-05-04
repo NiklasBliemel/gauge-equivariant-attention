@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import torch.optim as optim
 import pickle
 from Preconditioner import ptc
-from Operators import d_wc
 from Constants import *
+from Operators import D_WC
 from IPython.display import clear_output
 from GMRES import gmres
 
@@ -14,11 +14,13 @@ def loss_fn(module_output, target):
     return torch.norm(diff) / target.shape[0] ** (1 / 2)
 
 
-# Preconditioner for faster GMRES
+# D_WC
+d_wc = D_WC(M, GAUGE_FIELD)
 
-best_preconditioner = ptc("PtcOnly_gmres")
-for param in best_preconditioner.parameters():
-    param.requires_grad = False
+# Preconditioner for faster GMRES
+# best_preconditioner = ptc("Ptc_gmres_4_4")
+# for param in best_preconditioner.parameters():
+#     param.requires_grad = False
 
 
 class DwcTrainer:
@@ -77,15 +79,15 @@ class DwcTrainer:
 
     def train(self, mode=0, batch_size=1, sample_training_length=1, feedback_timer=10, stop_condition=1e-2,
               stop_condition_length=100, hard_stop=4000):
-        global best_preconditioner
+        # global best_preconditioner
 
         counter = len(self.epoch_list)
         with torch.no_grad():
             if mode == 0:
-                target = torch.rand(NUM_OF_LATTICES, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex128)
+                target = torch.rand(batch_size, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
                 current_B = d_wc(target)
             elif mode == 1:
-                current_B = torch.rand(NUM_OF_LATTICES, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex128)
+                current_B = torch.rand(NUM_OF_LATTICES, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
                 target = gmres(d_wc, current_B, best_preconditioner, best_preconditioner(current_B))[0]
             else:
                 raise ValueError('Mode must be 0 or 1.')
@@ -105,11 +107,11 @@ class DwcTrainer:
                     with torch.no_grad():
                         if mode == 0:
                             target = torch.rand(batch_size, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF,
-                                                dtype=torch.complex128)
+                                                dtype=torch.complex64)
                             current_B = d_wc(target)
                         elif mode == 1:
-                            current_B = torch.rand(batch_size, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF,
-                                                   dtype=torch.complex128)
+                            current_B = torch.rand(NUM_OF_LATTICES, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF,
+                                                   dtype=torch.complex64)
                             target = gmres(d_wc, current_B, best_preconditioner, best_preconditioner(current_B))[0]
 
                 # zeroing gradients

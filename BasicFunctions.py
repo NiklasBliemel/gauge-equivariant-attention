@@ -9,14 +9,14 @@ def dagger(matrix):
 
 def stretch(field):
     lattice_num_points = 1
-    for number in LATTICE:
+    for number in field.shape[1:-2]:
         lattice_num_points *= number
-    out = field.reshape(NUM_OF_LATTICES, lattice_num_points, GAUGE_DOF, -1)
+    out = field.reshape(field.shape[0], lattice_num_points, *field.shape[-2:])
     return out
 
 
-def contract(field):
-    out = field.reshape(NUM_OF_LATTICES, *LATTICE, GAUGE_DOF, -1)
+def contract(field, lattice):
+    out = field.reshape(field.shape[0], *lattice, *field.shape[-2])
     return out
 
 
@@ -31,7 +31,7 @@ def gauge_tra(field, new_gauge, field_is_gauge_field=False):
     # shortest pathes (t - z - y - x)
 def make_super_gauge_field(gauge_field):
     lattice = gauge_field.shape[1:-2]
-    super_gauge_field = torch.zeros(*lattice, *gauge_field.shape[1:], dtype=torch.complex128)
+    super_gauge_field = torch.zeros(*lattice, *gauge_field.shape[1:], dtype=torch.complex64)
     super_gauge_field[0, 0, 0, 0] = torch.diag_embed(torch.ones(*lattice, gauge_field.shape[-1]))
 
     for x_dim in range(1, lattice[0]):

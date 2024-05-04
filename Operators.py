@@ -48,7 +48,7 @@ class T(nn.Module):
 class SpinMatrix(nn.Module):
     def __init__(self, tensor):
         super(SpinMatrix, self).__init__()
-        self.tensor = tensor.to(torch.complex128)
+        self.tensor = tensor.to(torch.complex64)
 
     def forward(self, field):
         out = torch.matmul(field, self.tensor)
@@ -139,6 +139,3 @@ class D_WC(nn.Module):
         self.d_w.gauge_tra(new_gauge)
         for layer in self.D_WC_layers:
             layer[1].gauge_tra(new_gauge)
-
-
-d_wc = D_WC(M, GAUGE_FIELD_SMALL)
