@@ -192,7 +192,7 @@ class SuperGaugeFieldSoftmax(nn.Module):
         effect = self.softmax(attention_scores)
 
         # print(torch.sum(effect[0,0]))
-        # print("Attention Matrix:\n", effect.reshape(1, 4,4,4,8, 4,4,4,8)[0, 0,0,1,4, 0,0,:,:])
+        # print(f"Attention Matrix:\n", effect.reshape(1, 4,4,4,8, 4,4,4,8)[0, 0,0,:,:, 0,0,1,2])
 
         start = time.time()
         out = torch.mul(self.super_gauge_field.permute(2, 3, 0, 1).unsqueeze(0), effect).permute(0, 3, 4, 1, 2)
@@ -317,6 +317,110 @@ class Transformer(nn.Module):
         # print("Values Mean: ", torch.mean(torch.abs(values)))
         out = self.self_attention(queries, keys, values, show_time)
         # print("SA mean: ", torch.mean(torch.abs(out)))
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Everything in: {execution_time * 1e3:.3f} ms") if show_time else None
+
+        return out
+
+    def gauge_tra(self, new_gauge):
+        self.pe.gauge_tra(new_gauge)
+        self.self_attention.gauge_tra(new_gauge)
+
+
+class NonDirectionalSelfAttention(nn.Module):
+    def __init__(self, gauge_field, show_time):
+        super(NonDirectionalSelfAttention, self).__init__()
+        self.gauge_field = gauge_field
+        lattice = gauge_field.shape[1:-2]
+        self.volume = 1
+        for dim_size in lattice:
+            self.volume *= dim_size
+        self.activation = SuperGaugeFieldSoftmax(self.volume, self.gauge_field, show_time)
+
+    def forward(self, queries, keys, values, show_time):
+        queries_shape = queries.shape
+        keys_shape = keys.shape
+        values_shape = values.shape
+
+        # Split queries and keys into 4 Heads, one for each dimension
+        queries = queries.reshape(queries_shape[0], self.volume, queries_shape[-2], -1, 4).permute(0, 4, 1, 2, 3)
+        keys = keys.reshape(keys_shape[0], self.volume, keys_shape[-2], -1, 4).permute(0, 4, 1, 2, 3)
+        values = values.reshape(values_shape[0], self.volume, *values_shape[-2:])
+
+        start_time_attention = time.time()
+        invariant_queries = torch.real(torch.matmul(dagger(queries), queries))
+        invariant_queries = invariant_queries.permute(0, 2, 3, 4, 1).reshape(queries_shape[0], self.volume, -1)
+        invariant_keys = torch.real(torch.matmul(dagger(keys), keys))
+        invariant_keys = invariant_keys.permute(0, 2, 3, 4, 1).reshape(keys_shape[0], self.volume, -1)
+        attention_scores = torch.matmul(invariant_queries, invariant_keys.transpose(-2, -1))
+        end_time = time.time()
+        execution_time = end_time - start_time_attention
+        print(f"MltiHeadTr(dagger(q) q dagger(k) k) in: {execution_time * 1e3:.3f} ms") if show_time else None
+
+        start_time_activation = time.time()
+        attention = self.activation((attention_scores / invariant_queries.shape[-1]) ** 0.5, show_time)
+        end_time = time.time()
+        execution_time = end_time - start_time_activation
+        print(f"Activation in: {execution_time * 1e3:.3f} ms") if show_time else None
+
+        start_time_add = time.time()
+        out = torch.einsum("Nnmis,Nmsj->Nnij", [attention, values])
+        end_time = time.time()
+        execution_time = end_time - start_time_add
+        print(f"Transforming and Adding Values in: {execution_time * 1e3:.3f} ms") if show_time else None
+        return out
+
+    def gauge_tra(self, new_gauge):
+        self.gauge_field = gauge_tra(self.gauge_field, new_gauge, field_is_gauge_field=True)
+        self.activation.gauge_tra(self.gauge_field)
+
+
+class NonDirectionalTransformer(nn.Module):
+    def __init__(self, gauge_field, input_non_gauge_dof, linear_size, norm, show_time=False):
+        super(NonDirectionalTransformer, self).__init__()
+        start_time = time.time()
+        lattice = gauge_field.shape[1:-2]
+        lattice_dof = len(lattice)
+        pe_output_size = lattice_dof * input_non_gauge_dof
+        self.linear_size = linear_size
+        self.norm = norm
+
+        assert linear_size & lattice_dof == 0, "linear Size must be dividable by 4!"
+
+        self.norm_field_scale = nn.Parameter(torch.tensor(7, dtype=torch.complex64))
+        self.pe = PE_4D(gauge_field, input_non_gauge_dof)
+        self.W_Q = ReducedNonGaugeLinear(pe_output_size, linear_size)
+        self.W_K = ReducedNonGaugeLinear(pe_output_size, linear_size)
+        self.W_V = NonGaugeLinear(input_non_gauge_dof, linear_size)
+        self.out = NonGaugeLinear(linear_size, input_non_gauge_dof)
+        self.self_attention = NonDirectionalSelfAttention(gauge_field, show_time)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Transformer in: {execution_time * 1e3:.3f} ms") if show_time else None
+
+    def forward(self, field, show_time=False):
+        field_shape = field.shape
+        
+        if self.norm:
+            dims = tuple(range(1, len(field.shape)))
+            norm_field = self.norm_field_scale * field / torch.sum(torch.matmul(dagger(field), field), dim=dims) ** 0.5
+        else:
+            norm_field = field
+
+        start_time = time.time()
+        queries = self.W_Q(self.pe(norm_field))
+        keys = self.W_K(self.pe(norm_field))
+        values = self.W_V(field)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        print(f"Queries Keys Values in: {execution_time * 1e3:.3f} ms") if show_time else None
+
+        # print("Values Mean: ", torch.mean(torch.abs(values)))
+        out = self.self_attention(queries, keys, values, show_time)
+        # print("SA mean: ", torch.mean(torch.abs(out)))
+        
+        out = self.out(out).reshape(*field_shape)
         end_time = time.time()
         execution_time = end_time - start_time
         print(f"Everything in: {execution_time * 1e3:.3f} ms") if show_time else None
