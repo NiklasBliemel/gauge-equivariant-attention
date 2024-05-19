@@ -7,16 +7,21 @@ from time import perf_counter_ns
 
 d_wc = D_WC(M, GAUGE_FIELD_SMALL)
 
-Preconditioner = transformer("tr_4_16_True")
+def safe_gmres(tra_name):
+    
+    preconditioner = transformer(tra_name)
 
-b = torch.rand(NUM_OF_LATTICES, *LATTICE_SMALL, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
+    b = torch.rand(NUM_OF_LATTICES, *LATTICE_SMALL, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
 
-time_before = perf_counter_ns()
-field, res, steps, res_list = gmres(d_wc, b, Preconditioner, Preconditioner(b), 1000, 0.01, True)
-time_taken = (perf_counter_ns() - time_before) * 1e-6
-error = torch.norm((d_wc(field) - b).view(-1))
+    time_before = perf_counter_ns()
+    field, res, steps, res_list = gmres(d_wc, b, preconditioner, preconditioner(b), 1000, 0.01)
+    time_taken = (perf_counter_ns() - time_before) * 1e-6
+    error = torch.norm((d_wc(field) - b).view(-1))
+    res_list.append(error)
 
-torch.save(field, "hpd_test/solution_tra_0.pt")
+    torch.save(field, "hpd_test/" + tra_name + ".pt")
 
-with open('hpd_test/res_list_tra_0.pkl', 'wb') as f:
-    pickle.dump(res_list, f)
+    with open("hpd_test/" + tra_name + ".pkl", 'wb') as f:
+        pickle.dump(res_list, f)
+        
+safe_gmres("Tr_4_16_True")
