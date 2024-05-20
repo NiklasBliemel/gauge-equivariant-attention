@@ -3,7 +3,7 @@ import torch
 
 
 def plot_file(name, logarithmic=True):
-    plot_data = "Saved_plots/" + name + ".txt"
+    plot_data = "modules/Saved_plots/" + name + ".txt"
     
     epoch_list = []
     loss_list = []

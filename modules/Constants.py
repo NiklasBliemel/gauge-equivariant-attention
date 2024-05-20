@@ -18,11 +18,11 @@ PTC_PATHES = [[0], [1], [-1], [2], [-2], [3], [-3], [4], [-4]]
 # Wilson Dirac constants
 I_4 = torch.eye(4).to(torch.complex64)
 M = (-0.6 * I_4).to(torch.complex64)
-data = np.load("npy_files/gamma_matrices.npy").tolist()
+data = np.load("modules/npy_files/gamma_matrices.npy").tolist()
 GAMMA = torch.tensor(data).to(torch.complex64)
 
 # Gauge-Field; shape(4,8,8,8,16,3,3)
-data = np.load("npy_files/U.npy").tolist()
+data = np.load("modules/npy_files/U.npy").tolist()
 GAUGE_FIELD = torch.tensor(data).to(torch.complex64)
 
 # Gauge-Field; shape(4,4,4,4,8,3,3)

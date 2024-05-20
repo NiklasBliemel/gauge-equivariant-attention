@@ -2,11 +2,11 @@ import time
 import matplotlib.pyplot as plt
 import torch.optim as optim
 import pickle
-from Preconditioner import ptc
-from Constants import *
-from Operators import D_WC
 from IPython.display import clear_output
-from GMRES import gmres
+from modules.Preconditioner import ptc
+from modules.Constants import *
+from modules.Operators import D_WC
+from modules.GMRES import gmres
 
 
 def loss_fn(module_output, target):

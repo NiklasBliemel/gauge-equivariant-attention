@@ -1,4 +1,4 @@
-from BasicFunctions import *
+from modules.BasicFunctions import *
 from time import perf_counter_ns, sleep
 from IPython.display import clear_output
 import matplotlib.pyplot as plt
@@ -46,8 +46,8 @@ def gmres(operator, b, preconditioner=None, x0=None, k=100, tol=1e-3, print_res=
         y_i = torch.linalg.lstsq(H[:i_index + 2, :i_index + 1], e1).solution
         res = torch.norm(torch.matmul(H[:i_index + 2, :i_index + 1], y_i) - e1)
         if print_res:
+            clear_output()
             print(f"res-{i_index+1}: {res:.3e}")
-            clear_output(wait=True)
             sleep(0.1)
         res_list.append(res.item())
         if res < tol:

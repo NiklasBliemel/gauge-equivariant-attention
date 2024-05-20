@@ -1,4 +1,4 @@
-from Operators import *
+from modules.Operators import *
 import time
 
 
