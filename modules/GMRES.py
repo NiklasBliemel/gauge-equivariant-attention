@@ -1,5 +1,5 @@
 from modules.BasicFunctions import *
-from time import perf_counter_ns, sleep
+from time import time, sleep
 from IPython.display import clear_output
 import matplotlib.pyplot as plt
 
@@ -82,9 +82,9 @@ class GmresTest:
         x0 = None
         if preconditioner is not None:
             x0 = preconditioner(b)
-        time_before = perf_counter_ns()
+        time_before = time()
         field, res, steps, res_list = gmres(self.operator, b, preconditioner, x0, self.max_iter, self.tol, print_res)
-        time_taken = (perf_counter_ns() - time_before) * 1e-6
+        time_taken = (time() - time_before) * 1e3
         print(f"res: {res:.3e}")
         error = torch.norm((self.operator(field) - b).view(-1))
         print(f"Using GMRES: error: {error:.3e} in time {time_taken:.1f}ms and {steps} iterations")
