@@ -21,7 +21,7 @@ def test_gmres(tra_name, small=False, max_iter=1000, tol=1e-2):
     time_before = time.time()
     field, res, steps, res_list = gmres(operator, b, preconditioner, preconditioner(b), max_iter, tol, True)
     time_taken = (time.time() - time_before) * 1e3
-    print(f"res: {res:.3e}")
+    print(f"\nres: {res:.3e}")
     error = torch.norm((operator(field) - b).view(-1))
     print(f"\nUsing GMRES: error: {error:.3e} in time {time_taken:.1f}ms and {steps} iterations")
 
@@ -32,7 +32,7 @@ def test_gmres(tra_name, small=False, max_iter=1000, tol=1e-2):
     plt.ylabel('Residual')
     plt.title("Residual - Plot")
     plt.grid(True)
-    plt.show()
+    plt.savefig(tra_name + "_plot.png")
 
 
 test_gmres("tr_gmres_4_16_True", small=True)
