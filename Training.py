@@ -9,6 +9,6 @@ module = Transformer(*structure)
 
 dwc_trainer = DwcTrainer(module, structure)
 
-dwc_trainer.train(small=True, train_with_gmres=False, batch_size=1)
+dwc_trainer.train(small=True, train_with_gmres=False, batch_size=1, hard_stop=1000)
 
 dwc_trainer.safe_data("test")

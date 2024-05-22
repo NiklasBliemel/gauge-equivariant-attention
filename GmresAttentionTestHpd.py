@@ -5,16 +5,13 @@ from modules.Preconditioner import transformer
 import matplotlib.pyplot as plt
 import time
 
-d_wc = D_WC(M, GAUGE_FIELD)
-d_wc_small = D_WC(M, GAUGE_FIELD_SMALL)
-
 
 def test_gmres(tra_name, small=False, max_iter=1000, tol=1e-2):
     if small:
-        operator = d_wc_small
+        operator = D_WC(M, GAUGE_FIELD_SMALL)
         b = torch.rand(DEFAULT_BATCH_SIZE, *LATTICE_SMALL, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
     else:
-        operator = d_wc
+        operator = D_WC(M, GAUGE_FIELD)
         b = torch.rand(DEFAULT_BATCH_SIZE, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
 
     preconditioner = transformer(tra_name)

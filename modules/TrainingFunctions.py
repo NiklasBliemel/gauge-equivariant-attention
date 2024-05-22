@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import torch.optim as optim
 import pickle
 from time import sleep
-from IPython.display import clear_output
 from modules.Preconditioner import ptc
 from modules.Operators import D_WC
 from modules.Constants import *
@@ -90,7 +89,7 @@ class DwcTrainer:
                              textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
         plt.show()
 
-    def train(self, small=True, train_with_gmres=False, learning_rate=0.01, batch_size=1, sample_training_length=1, feedback_timer=10, stop_condition=1e-2,
+    def train(self, small=True, train_with_gmres=False, learning_rate=0.01, batch_size=1, sample_training_length=1, feedback_timer=10, update_plot=False, stop_condition=1e-2,
               stop_condition_length=100, hard_stop=4000):
         global best_preconditioner, best_preconditioner_small
         optimizer = optim.Adam(self.module.parameters(), lr=learning_rate)
@@ -123,7 +122,8 @@ class DwcTrainer:
         N = stop_condition_length
 
         try:
-            self.plot_data()
+            if update_plot:
+                self.plot_data()
             while True:
                 # Creating new sample each n-th round
                 if counter % sample_training_length == 0:
@@ -155,8 +155,8 @@ class DwcTrainer:
                 self.epoch_list.append(counter)
                 self.loss_list.append(loss.item())
                 if (counter - 1) % feedback_timer == 0:
-                    clear_output(wait=True)
-                    self.plot_data()
+                    if update_plot:
+                        self.plot_data()
 
                     # If the mean of the last N loss_list values does not decrease after N times in succession
                     if counter > N:
@@ -176,11 +176,11 @@ class DwcTrainer:
                 # Sleep to protect cpu
                 sleep(0.1)
 
-            clear_output(wait=True)
-            self.plot_data()
+            if update_plot:
+                self.plot_data()
             print("\n" + "Goal reached!")
 
         except KeyboardInterrupt:
-            clear_output(wait=True)
-            self.plot_data()
+            if update_plot:
+                self.plot_data()
             print("\n" + "Training stopped manually!")

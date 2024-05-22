@@ -1,6 +1,5 @@
 from modules.BasicFunctions import *
-from time import time
-import matplotlib.pyplot as plt
+
 
 """""
 Generalized Method of Residuals is a iterative method to solve a system of linear equations defined as Dx = b, where
