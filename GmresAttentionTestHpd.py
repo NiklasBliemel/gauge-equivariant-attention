@@ -32,7 +32,7 @@ def test_gmres(tra_name, small=False, max_iter=1000, tol=1e-2):
     plt.ylabel('Residual')
     plt.title("Residual - Plot")
     plt.grid(True)
-    plt.savefig(tra_name + "_plot.png")
+    plt.savefig("plot.png")
 
 
 test_gmres("tr_gmres_4_16_True", small=True)
