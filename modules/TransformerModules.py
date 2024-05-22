@@ -2,6 +2,18 @@ from modules.Operators import *
 import time
 
 
+"""""
+This is the core part of the code. Here all the Nural Network Models are implemented as subclasses of nn.Module form 
+torch.
+The main goal is to construct a gauge equivalent attention model, which ultimate is used to work as a preconditioner 
+for solving Dwc(x)=b with Gmres.
+For more detailed information on how the Attention model works, refer to:
+https://proceedings.neurips.cc/paper_files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf
+In addition the the attention model, also the Parallel Transport Convolution Layer is implemented here for comparison.
+Details to that are found in https://arxiv.org/pdf/2302.05419
+"""""
+
+
 # Random Spin-matrix, same for every site
 class NonGaugeLinear(nn.Module):
     def __init__(self, input_dof, output_dof):
@@ -13,9 +25,8 @@ class NonGaugeLinear(nn.Module):
         out = torch.matmul(field, self.weights)
         return out
 
-    # Starts as dupe Matrix, because default pe is already close to goal
 
-
+# Starts as dupe Matrix, because default pe is already close to goal
 class ReducedNonGaugeLinear(nn.Module):
     def __init__(self, input_size, output_size):
         super(ReducedNonGaugeLinear, self).__init__()
@@ -42,9 +53,8 @@ class ReducedNonGaugeLinear(nn.Module):
         out = torch.matmul(field, self.weights)
         return out
 
-    # Volume size spin matrix (different at each site)
 
-
+# Volume size spin matrix (different at each site)
 class LocalNonGaugeLinear(nn.Module):
     def __init__(self, input_dof, lattice):
         super(LocalNonGaugeLinear, self).__init__()
@@ -54,9 +64,8 @@ class LocalNonGaugeLinear(nn.Module):
         out = torch.matmul(field, self.weights)
         return out
 
-    # Volume size Matrix which transforms Values based on relative shift compared to Queries
 
-
+# Volume size Matrix which transforms Values based on relative shift compared to Queries
 class PathBasedLinear(nn.Module):
     def __init__(self, non_gauge_dof, lattice):
         super(PathBasedLinear, self).__init__()
@@ -93,9 +102,8 @@ class PTC(nn.Module):
         for layer in self.PTC_layers:
             layer[1].gauge_tra(new_gauge)
 
-        # Quadruples input field and adds a four block PE, each block representing one Dimension
 
-
+# Quadruples input field and adds a four block PE-Matrix, each block representing one Dimension
 class PE_4D(nn.Module):
     def __init__(self, gauge_field, input_non_gauge_dof):
         super(PE_4D, self).__init__()

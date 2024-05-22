@@ -1,10 +1,15 @@
 import torch
 import numpy as np
 
-# Number of lattices
-NUM_OF_LATTICES = 1
 
-# Lattice:
+"""""
+Here we define all the important global constants defining the L-QCD configuration.
+In addition the used gauge-field and the gamma-matrices, c_sw-constant and mass-constant for Dwc are defined here.
+Also the Path's used by the PTC module are here predefined.
+"""""
+
+
+DEFAULT_BATCH_SIZE = 1
 LATTICE = (8, 8, 8, 16)
 LATTICE_SMALL = (4, 4, 4, 8)
 

@@ -1,22 +1,17 @@
 from modules.Constants import *
 
 
+"""""
+Here basic operations like dagger are implemented for torch tensors.
+Also gauge transformation is defined for both field and gauge-field of any size.
+Make super_gauge_field is a function that takes a gauge-field and returns a large volume squared gauge-field that can
+connect any point from a field with another over a predefined path trough the original gauge_field
+"""""
+
+
 def dagger(matrix):
     conj_matrix = torch.conj(matrix)
     out = conj_matrix.transpose(-2, -1)
-    return out
-
-
-def stretch(field):
-    lattice_num_points = 1
-    for number in field.shape[1:-2]:
-        lattice_num_points *= number
-    out = field.reshape(field.shape[0], lattice_num_points, *field.shape[-2:])
-    return out
-
-
-def contract(field, lattice):
-    out = field.reshape(field.shape[0], *lattice, *field.shape[-2])
     return out
 
 
@@ -28,7 +23,7 @@ def gauge_tra(field, new_gauge, field_is_gauge_field=False):
     return out_field
 
 
-    # shortest pathes (t - z - y - x)
+# shortest path's (order: t -> z -> y -> x)
 def make_super_gauge_field(gauge_field):
     lattice = gauge_field.shape[1:-2]
     super_gauge_field = torch.zeros(*lattice, *gauge_field.shape[1:], dtype=torch.complex64)

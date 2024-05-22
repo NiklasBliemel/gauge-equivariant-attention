@@ -12,10 +12,10 @@ d_wc_small = D_WC(M, GAUGE_FIELD_SMALL)
 def test_gmres(tra_name, small=False, max_iter=1000, tol=1e-2):
     if small:
         operator = d_wc_small
-        b = torch.rand(NUM_OF_LATTICES, *LATTICE_SMALL, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
+        b = torch.rand(DEFAULT_BATCH_SIZE, *LATTICE_SMALL, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
     else:
         operator = d_wc
-        b = torch.rand(NUM_OF_LATTICES, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
+        b = torch.rand(DEFAULT_BATCH_SIZE, *LATTICE, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
 
     preconditioner = transformer(tra_name)
     time_before = time.time()

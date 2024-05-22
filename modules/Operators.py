@@ -2,7 +2,12 @@ import torch.nn as nn
 from modules.BasicFunctions import *
 
 
-# Hop and Path operator
+"""""
+Here all the important L-QCD operators are implemented subclasses of nn.Module, allowing them to be used as parts in a
+Nural Network. Detailed Descriptions can be found here: https://arxiv.org/pdf/2302.05419
+(The Name of each operator here match with its counterpart in the linked paper)
+"""""
+
 
 class H(nn.Module):
     def __init__(self, dimension, gauge_field):

@@ -2,6 +2,13 @@ from modules.BasicFunctions import *
 from time import time
 import matplotlib.pyplot as plt
 
+"""""
+Generalized Method of Residuals is a iterative method to solve a system of linear equations defined as Dx = b, where
+D is a diagonal heavy Matrix and x, b are vectors. In Lattice QCD the Dirac Wilson Clover operator Dwc can be regarded
+as a square Matrix for a flattened L-QCD color field. The code implements such a Solver for torch tensors, specified for
+solving Dwc(x)=b. 
+"""""
+
 
 def gmres(operator, b, preconditioner=None, x0=None, k=100, tol=1e-3, print_res=False):
     res_list = []
@@ -61,36 +68,3 @@ def gmres(operator, b, preconditioner=None, x0=None, k=100, tol=1e-3, print_res=
         x_out = x0 + torch.matmul(Z[:, :i_index + 1], y_i).reshape(b_shape)
 
     return x_out, res, i_index + 1, res_list
-
-
-class GmresTest:
-    def __init__(self, operator, num_of_lattices, lattice, gauge_dof, non_gauge_dof, max_iter=100, tol=1e-2):
-        self.operator = operator
-        self.max_iter = max_iter
-        self.tol = tol
-        self.num_of_lattices = num_of_lattices
-        self.lattice = lattice
-        self.gauge_dof = gauge_dof
-        self.non_gauge_dof = non_gauge_dof
-
-    def __call__(self, preconditioner=None, print_res=True):
-        b = torch.rand(self.num_of_lattices, *self.lattice, self.gauge_dof, self.non_gauge_dof,
-                       dtype=torch.complex64)
-        x0 = None
-        if preconditioner is not None:
-            x0 = preconditioner(b)
-        time_before = time()
-        field, res, steps, res_list = gmres(self.operator, b, preconditioner, x0, self.max_iter, self.tol, print_res)
-        time_taken = (time() - time_before) * 1e3
-        print(f"res: {res:.3e}")
-        error = torch.norm((self.operator(field) - b).view(-1))
-        print(f"Using GMRES: error: {error:.3e} in time {time_taken:.1f}ms and {steps} iterations")
-
-        steps_list = list(range(1, steps + 1))
-        plt.plot(steps_list, res_list, marker='o', linestyle='-', markersize=0.1)
-        plt.xlabel('Iteration')
-        plt.yscale('log')
-        plt.ylabel('Residual')
-        plt.title("Residual - Plot")
-        plt.grid(True)
-        plt.show()
