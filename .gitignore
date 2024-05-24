@@ -4,6 +4,15 @@
 *.aux
 *.png
 *.sh
+*.ipynb
+.ssh/
+.bash_history
+.config/
+.gitconfig
+.jupyter/
+.lesshst
+.local/
+.python_history
 
 .DS_Store
 .idea
