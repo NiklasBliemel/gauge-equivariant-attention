@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from IPython.display import clear_output
 import torch.optim as optim
 import pickle
 from time import sleep
@@ -46,6 +47,7 @@ class DwcTrainer:
         self.structure = structure
         self.epoch_list = []
         self.loss_list = []
+        self.fig, self.ax = plt.subplots()
 
     def safe_data_as(self, save_model_name: str):
         self.save_plot(save_model_name)
@@ -87,20 +89,23 @@ class DwcTrainer:
                 self.training_step(counter, current_B, optimizer, target)
                 if (counter - 1) % check_period == 0:
                     if update_plot:
+                        clear_output(wait=True)
                         self.plot_data()
                     running, lowest_mean = self.check_stop_conditions(counter, check_period, max_epoch, lowest_mean,
                                                                       running, min_mean_diff, stop_repetition_length,
                                                                       stop_counter)
 
-                # Sleep to protect cpu
+                # Sleep to protect CPU
                 sleep(0.1)
 
             if update_plot:
+                clear_output(wait=True)
                 self.plot_data()
             print("\n" + "Goal reached!")
 
         except KeyboardInterrupt:
             if update_plot:
+                clear_output(wait=True)
                 self.plot_data()
             print("\n" + "Training stopped manually!")
 
@@ -122,23 +127,22 @@ class DwcTrainer:
             if len(self.loss_list) < 50:
                 last_loss = self.loss_list[-1]
                 plt.annotate(f'Last Epoch: {last_epoch}, Last Loss: {last_loss:.2f}', xy=(last_epoch, last_loss),
-                             xytext=(20, 20),
-                             textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
+                                 xytext=(20, 20),
+                                 textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
             else:
                 loss_tensor = torch.tensor(self.loss_list[-50:])
                 loss_mean = torch.mean(loss_tensor).item()
                 loss_var = torch.std(loss_tensor).item()
                 plt.annotate(f'Last Epoch: {last_epoch}, Mean: {loss_mean:.2f}, Variance: {loss_var:.2f}',
-                             xy=(last_epoch, loss_mean), xytext=(20, 20),
-                             textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
+                                 xy=(last_epoch, loss_mean), xytext=(20, 20),
+                                 textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
 
     def set_plot_base(self):
-        plot_name = "Update Plot"
         plt.plot(self.epoch_list, self.loss_list, marker='o', linestyle='-', markersize=0.1)
         plt.yscale('log')
         plt.xlabel('Epoch')
         plt.ylabel('Loss')
-        plt.title(plot_name)
+        plt.title("Update Plot")
         plt.grid(True)
 
     def check_stop_conditions(self, counter, feedback_timer, hard_stop, lowest_mean, running, stop_condition,

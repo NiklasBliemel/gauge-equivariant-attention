@@ -24,7 +24,7 @@ def train_model(Module: nn.Module, structure: tuple = None, saved_module_name: s
         raise ValueError("You can only specify a structure or the name of a saved module")
     dwc_trainer = DwcTrainer(module, structure)
     # specify hard configuration of training
-    dwc_trainer.train(small=small, update_plot=False)
+    dwc_trainer.train(small=small, update_plot=True)
     dwc_trainer.safe_data_as(saved_module_name)
 
 
