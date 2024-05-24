@@ -24,6 +24,7 @@ best_preconditioner_small = load_trained_module(PTC, "ptc_gmres_4_4")
 for param in best_preconditioner_small.parameters():
     param.requires_grad = False
 
+
 """""
 The Class DwcTrainer is a class designed for training a nn.Module to become a good preconditioner for solving Dwc(x) = b
 with GMRES.
