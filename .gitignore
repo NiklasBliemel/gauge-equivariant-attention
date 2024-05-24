@@ -3,6 +3,7 @@
 *.out
 *.aux
 *.png
+*.sh
 
 .DS_Store
 .idea
