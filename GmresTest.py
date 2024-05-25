@@ -32,7 +32,7 @@ def safe_result_as_png(saved_module_name ,res_list, steps, error, time_taken):
     plt.ylabel('Residual')
     plt.title(f"module: {saved_module_name} | error: {error:.3e} | time: {time_taken:.0f}ms | steps: {steps} iterations")
     plt.grid(True)
-    plt.savefig("Saved_gmres_results/" + saved_module_name + ".png")
+    plt.savefig("Saved_gmres_results/" + saved_module_name + "_test.png")
 
 
 def init_dwc(small):
