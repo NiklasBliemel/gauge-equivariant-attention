@@ -21,7 +21,7 @@ def loss_fn(module_output, target):
 best_preconditioner = load_trained_module(PTC, "Ptc_4_4")
 for param in best_preconditioner.parameters():
     param.requires_grad = False
-best_preconditioner_small = load_trained_module(PTC, "ptc_gmres_4_4")
+best_preconditioner_small = load_trained_module(PTC, "ptc_4_4_gmres")
 for param in best_preconditioner_small.parameters():
     param.requires_grad = False
 

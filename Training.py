@@ -44,5 +44,5 @@ def choose_save_name(module, structure, small, train_with_gmres):
     if not small:
         save_name = save_name.capitalize()
     if train_with_gmres:
-        save_name += "gmres"
+        save_name += "_gmres"
     return save_name
