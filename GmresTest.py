@@ -1,3 +1,4 @@
+from configuration.Constants import *
 from configuration.GMRES import gmres
 from configuration.Operators import D_WC, nn
 from configuration.LoadData import load_trained_module
@@ -8,7 +9,7 @@ def gmres_test(Module: nn.Module = None, saved_module_name=None, small=False, ma
     b = create_sample(small)
     operator = init_dwc(small)
 
-    if Module is None or saved_module_name is None:
+    if Module is not None and saved_module_name is not None:
         preconditioner = load_trained_module(Module, saved_module_name)
         for param in preconditioner.parameters():  # Disable grad calculation for better performance
             param.requires_grad = False
@@ -16,21 +17,22 @@ def gmres_test(Module: nn.Module = None, saved_module_name=None, small=False, ma
                                                    tol=tol, print_res=False)
 
     else:
+        saved_module_name = "none"
         field, steps, res_list, time_taken = gmres(operator, b, max_iter=max_iter, tol=tol, print_res=False)
 
     error = torch.norm((operator(field) - b).view(-1))
-    safe_result_as_png(res_list, steps, error, time_taken)
+    safe_result_as_png(saved_module_name, res_list, steps, error, time_taken)
 
 
-def safe_result_as_png(res_list, steps, error, time_taken):
+def safe_result_as_png(saved_module_name ,res_list, steps, error, time_taken):
     step_list = list(range(1, steps + 1))
     plt.plot(step_list, res_list, marker='o', linestyle='-', markersize=0.1)
     plt.xlabel('Iteration')
     plt.yscale('log')
     plt.ylabel('Residual')
-    plt.title(f"\nUsing GMRES: error: {error:.3e} in time {time_taken:.1f}ms and {steps} iterations")
+    plt.title(f"module: {saved_module_name} | error: {error:.3e} | time: {time_taken:.0f}ms | steps: {steps} iterations")
     plt.grid(True)
-    plt.savefig("plot.png")
+    plt.savefig("Saved_gmres_results/" + saved_module_name + ".png")
 
 
 def init_dwc(small):

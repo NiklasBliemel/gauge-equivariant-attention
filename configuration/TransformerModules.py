@@ -159,6 +159,7 @@ class PE_4D(nn.Module):
 class SuperPtc(nn.Module):
     def __init__(self, gauge_field, input_non_gauge_dof):
         super(SuperPtc, self).__init__()
+        self.input_non_gauge_dof = input_non_gauge_dof
         lattice = gauge_field.shape[1:-2]
         self.volume = 1
         for num in lattice:
@@ -171,7 +172,7 @@ class SuperPtc(nn.Module):
     def forward(self, field):
         out = field.reshape(field.shape[0], self.volume, *field.shape[-2:])
         out = self.linear(out)
-        out = torch.einsum('nmis,Nnmsj->Nnij', [self.super_gauge_field, out]).reshape(*field.shape)
+        out = torch.einsum('nmis,Nnmsj->Nnij', [self.super_gauge_field, out]).reshape(*field.shape) / (self.volume * self.input_non_gauge_dof) ** 0.5
         # print("SuperPtc mean: ", torch.mean(torch.abs(out)))
         return out
 

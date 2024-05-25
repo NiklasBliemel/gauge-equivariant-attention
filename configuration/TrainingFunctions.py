@@ -91,7 +91,7 @@ class DwcTrainer:
                     if update_plot:
                         clear_output(wait=True)
                         self.plot_data()
-                    running, lowest_mean = self.check_stop_conditions(counter, check_period, max_epoch, lowest_mean,
+                    running, lowest_mean, stop_counter = self.check_stop_conditions(counter, check_period, max_epoch, lowest_mean,
                                                                       running, min_mean_diff, stop_repetition_length,
                                                                       stop_counter)
 
@@ -159,7 +159,7 @@ class DwcTrainer:
                 running = False
         if counter > hard_stop:
             running = False
-        return running, lowest_mean
+        return running, lowest_mean, stop_counter
 
     def training_step(self, counter, current_B, optimizer, target):
         # zeroing gradients
