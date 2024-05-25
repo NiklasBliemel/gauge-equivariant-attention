@@ -3,7 +3,7 @@ import torch
 from config.LoadData import load_plot_data
 
 
-def plot_file(file_name, logarithmic=True):
+def plot_file(file_name, logarithmic=True, save_as_png=False):
     epoch_list, loss_list = load_plot_data(file_name)
 
     plt.plot(epoch_list, loss_list, marker='o', linestyle='-', markersize=0.1)
@@ -27,4 +27,7 @@ def plot_file(file_name, logarithmic=True):
         plt.annotate(f'Last Epoch: {last_epoch}, Mean: {loss_mean:.2f}, Variance: {loss_var:.2f}',
                      xy=(last_epoch, loss_mean), xytext=(20, 20),
                      textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
-    plt.show()
+    if save_as_png:
+        plt.savefig("Saved_plot_figures/" + file_name + "_plot.png")
+    else:
+        plt.show()
