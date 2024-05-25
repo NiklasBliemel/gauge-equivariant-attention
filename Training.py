@@ -13,8 +13,8 @@ Structures:
 """""
 
 
-def train_model(Module: nn.Module, structure: tuple = None, saved_module_name: str = None,
-                small: bool = False, train_with_gmres: bool = False):
+def train_module(Module: nn.Module, structure: tuple = None, saved_module_name: str = None,
+                 small: bool = False, train_with_gmres: bool = False):
     if structure is not None and saved_module_name is None:   # Make new Module
         module = Module(*structure)
         saved_module_name = choose_save_name(module, structure, small, train_with_gmres)
