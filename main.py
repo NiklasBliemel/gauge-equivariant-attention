@@ -1,5 +1,5 @@
-from configuration.Constants import *
-from configuration.TransformerModules import Transformer, PTC, SuperPtc
+from config.Constants import *
+from config.TransformerModules import Transformer, PTC, SuperPtc
 from Training import train_model
 from GmresTest import gmres_test
 

@@ -1,7 +1,7 @@
-from configuration.Constants import *
-from configuration.GMRES import gmres
-from configuration.Operators import D_WC, nn
-from configuration.LoadData import load_trained_module
+from config.Constants import *
+from config.GMRES import gmres
+from config.Operators import D_WC, nn
+from config.LoadData import load_trained_module
 import matplotlib.pyplot as plt
 
 

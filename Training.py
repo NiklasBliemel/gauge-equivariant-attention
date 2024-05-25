@@ -1,7 +1,7 @@
-from configuration.Constants import *
-from configuration.TransformerModules import nn, Transformer, PTC, SuperPtc
-from configuration.LoadData import load_trained_module, load_structure
-from configuration.TrainingFunctions import DwcTrainer
+from config.Constants import *
+from config.TransformerModules import nn, Transformer, PTC, SuperPtc
+from config.LoadData import load_trained_module, load_structure
+from config.TrainingFunctions import DwcTrainer
 
 """""
 Train Modules until sufficiently converged.
@@ -24,7 +24,7 @@ def train_model(Module: nn.Module, structure: tuple = None, saved_module_name: s
     else:
         raise ValueError("You can only specify a structure or the name of a saved module")
     dwc_trainer = DwcTrainer(module, structure)
-    # specify hard configuration of training
+    # specify hard config of training
     dwc_trainer.train(small=small, train_with_gmres=train_with_gmres, update_plot=False)
     dwc_trainer.safe_data_as(saved_module_name)
 

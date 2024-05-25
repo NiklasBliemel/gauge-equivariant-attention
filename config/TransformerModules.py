@@ -1,5 +1,5 @@
-from configuration.BasicFunctions import *
-from configuration.Operators import nn, T
+from config.BasicFunctions import *
+from config.Operators import nn, T
 import time
 
 

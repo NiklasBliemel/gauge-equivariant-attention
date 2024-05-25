@@ -1,5 +1,5 @@
 import torch.nn as nn
-from configuration.BasicFunctions import *
+from config.BasicFunctions import *
 
 
 """""

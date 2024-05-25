@@ -3,11 +3,11 @@ from IPython.display import clear_output
 import torch.optim as optim
 import pickle
 from time import sleep
-from configuration.LoadData import load_trained_module
-from configuration.Operators import D_WC
-from configuration.TransformerModules import PTC
-from configuration.Constants import *
-from configuration.GMRES import gmres
+from config.LoadData import load_trained_module
+from config.Operators import D_WC
+from config.TransformerModules import PTC
+from config.Constants import *
+from config.GMRES import gmres
 
 
 # the loss function defines how far the module output is off the desired target (it shall be minimized)
@@ -24,7 +24,6 @@ for param in best_preconditioner.parameters():
 best_preconditioner_small = load_trained_module(PTC, "ptc_gmres_4_4")
 for param in best_preconditioner_small.parameters():
     param.requires_grad = False
-
 
 """""
 The Class DwcTrainer is a class designed for training a nn.Module to become a good preconditioner for solving Dwc(x) = b
@@ -91,9 +90,11 @@ class DwcTrainer:
                     if update_plot:
                         clear_output(wait=True)
                         self.plot_data()
-                    running, lowest_mean, stop_counter = self.check_stop_conditions(counter, check_period, max_epoch, lowest_mean,
-                                                                      running, min_mean_diff, stop_repetition_length,
-                                                                      stop_counter)
+                    running, lowest_mean, stop_counter = self.check_stop_conditions(counter, check_period, max_epoch,
+                                                                                    lowest_mean,
+                                                                                    running, min_mean_diff,
+                                                                                    stop_repetition_length,
+                                                                                    stop_counter)
 
                 # Sleep to protect CPU
                 sleep(0.1)
@@ -110,15 +111,15 @@ class DwcTrainer:
             print("\n" + "Training stopped manually!")
 
     def save_parameters(self, model_name):
-        torch.save(self.module.state_dict(), "configuration/Saved_paras/" + model_name + ".pth")
+        torch.save(self.module.state_dict(), "config/Saved_paras/" + model_name + ".pth")
 
     def save_plot(self, file_name):
-        with open("configuration/Saved_plots/" + file_name + ".txt", "w") as file:
+        with open("config/Saved_plots/" + file_name + ".txt", "w") as file:
             for epoch, loss in zip(self.epoch_list, self.loss_list):
                 file.write(f"{epoch}\t{loss}\n")
 
     def save_structure(self, file_name):
-        with open("configuration/Saved_structures/" + file_name + ".pkl", 'wb') as f:
+        with open("config/Saved_structures/" + file_name + ".pkl", 'wb') as f:
             pickle.dump(self.structure, f)
 
     def add_mean_and_var(self):
@@ -127,15 +128,15 @@ class DwcTrainer:
             if len(self.loss_list) < 50:
                 last_loss = self.loss_list[-1]
                 plt.annotate(f'Last Epoch: {last_epoch}, Last Loss: {last_loss:.2f}', xy=(last_epoch, last_loss),
-                                 xytext=(20, 20),
-                                 textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
+                             xytext=(20, 20),
+                             textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
             else:
                 loss_tensor = torch.tensor(self.loss_list[-50:])
                 loss_mean = torch.mean(loss_tensor).item()
                 loss_var = torch.std(loss_tensor).item()
                 plt.annotate(f'Last Epoch: {last_epoch}, Mean: {loss_mean:.2f}, Variance: {loss_var:.2f}',
-                                 xy=(last_epoch, loss_mean), xytext=(20, 20),
-                                 textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
+                             xy=(last_epoch, loss_mean), xytext=(20, 20),
+                             textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
 
     def set_plot_base(self):
         plt.plot(self.epoch_list, self.loss_list, marker='o', linestyle='-', markersize=0.1)
@@ -146,8 +147,7 @@ class DwcTrainer:
         plt.grid(True)
 
     def check_stop_conditions(self, counter, feedback_timer, hard_stop, lowest_mean, running, stop_condition,
-                              stop_condition_length,
-                              stop_counter):
+                              stop_condition_length, stop_counter):
         if counter > stop_condition_length:
             current_mean = torch.mean(torch.tensor(self.loss_list[-stop_condition_length:]))
             if lowest_mean - stop_condition < current_mean:

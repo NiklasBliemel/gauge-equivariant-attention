@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import torch
-from configuration.LoadData import load_plot_data
+from config.LoadData import load_plot_data
 
 
 def plot_file(file_name, logarithmic=True):

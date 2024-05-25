@@ -1,4 +1,4 @@
-from configuration.BasicFunctions import *
+from config.BasicFunctions import *
 from time import time
 
 

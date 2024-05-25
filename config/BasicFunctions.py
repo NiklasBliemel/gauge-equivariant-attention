@@ -1,4 +1,4 @@
-from configuration.Constants import *
+from config.Constants import *
 
 
 """""
