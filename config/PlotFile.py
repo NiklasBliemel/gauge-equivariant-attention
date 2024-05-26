@@ -5,13 +5,16 @@ from config.LoadData import load_plot_data
 
 def plot_file(file_name, logarithmic=True, save_as_png=False):
     epoch_list, loss_list = load_plot_data(file_name)
+    plot(file_name, epoch_list, loss_list)
 
+
+def plot(name, epoch_list, loss_list):
     plt.plot(epoch_list, loss_list, marker='o', linestyle='-', markersize=0.1)
     if logarithmic:
         plt.yscale('log')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
-    plt.title(file_name)
+    plt.title(name)
     plt.grid(True)
 
     last_epoch = epoch_list[-1]
@@ -28,6 +31,6 @@ def plot_file(file_name, logarithmic=True, save_as_png=False):
                      xy=(last_epoch, loss_mean), xytext=(20, 20),
                      textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
     if save_as_png:
-        plt.savefig("Saved_plot_figures/" + file_name + "_plot.png")
+        plt.savefig("Saved_plot_figures/" + name + "_plot.png")
     else:
         plt.show()

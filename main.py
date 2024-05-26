@@ -10,13 +10,4 @@ Functions that are designed for main (save data when finished):
 * gmres_test
 """""
 
-
-train_module(PTC, structure=(NON_GAUGE_DOF, NON_GAUGE_DOF, PTC_PATHES, GAUGE_FIELD_SMALL), small=True, train_with_gmres=False)
-
-train_module(SuperPtc, structure=(GAUGE_FIELD_SMALL, NON_GAUGE_DOF), small=True, train_with_gmres=False)
-
-train_module(Transformer, structure=(GAUGE_FIELD_SMALL, NON_GAUGE_DOF, 16), small=True, train_with_gmres=True)
-
-train_module(PTC, structure=(NON_GAUGE_DOF, NON_GAUGE_DOF, PTC_PATHES, GAUGE_FIELD_SMALL), small=True, train_with_gmres=True)
-
-train_module(SuperPtc, structure=(GAUGE_FIELD_SMALL, NON_GAUGE_DOF), small=True, train_with_gmres=True)
+train_module(Transformer, structure=(GAUGE_FIELD_SMALL, NON_GAUGE_DOF, 16), small=True)

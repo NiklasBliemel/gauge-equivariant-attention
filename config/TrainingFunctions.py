@@ -3,11 +3,12 @@ from IPython.display import clear_output
 import torch.optim as optim
 import pickle
 from time import sleep
+from config.Constants import *
 from config.LoadData import load_trained_module
+from config.PlotFile import plot
 from config.Operators import D_WC
 from config.TransformerModules import PTC
-from config.Constants import *
-from config.GMRES import gmres
+from config.GMRES import gmres, gmres_precon, gmres_train
 
 
 # the loss function defines how far the module output is off the desired target (it shall be minimized)
@@ -43,75 +44,20 @@ class DwcTrainer:
         global best_preconditioner
 
         self.module = module
+        self.optimizer = optim.Adam(self.module.parameters(), lr=0.01)
         self.structure = structure
         self.epoch_list = []
         self.loss_list = []
         self.fig, self.ax = plt.subplots()
 
-    def safe_data_as(self, save_model_name: str):
+    def save_data_as(self, save_model_name: str):
         self.save_plot(save_model_name)
         self.save_structure(save_model_name)
         self.save_parameters(save_model_name)
-        print("Data were successfully saved!")
+        print("Data successfully saved!")
 
-    def plot_data(self):
-        self.set_plot_base()
-        self.add_mean_and_var()
-        plt.show()
-
-    def train(self, small=False, train_with_gmres=False, learning_rate=0.01, batch_size=1, sample_update_period=1,
-              check_period=10, update_plot=False, min_mean_diff=1e-2, stop_repetition_length=100, max_epoch=4000):
-
-        optimizer = optim.Adam(self.module.parameters(), lr=learning_rate)
-        counter = len(self.epoch_list)
-        lattice, opterator, preconditioner = self.init_training_constants(small)
-
-        if train_with_gmres:
-            assert batch_size == 1, "Batch size must be 1 for training with GMRES!"
-
-        # first training sample
-        current_B, target = self.new_sample(batch_size, lattice, opterator, preconditioner, train_with_gmres)
-
-        # Start_values for stop condition
-        lowest_mean = 1e6
-        stop_counter = 0
-
-        try:
-            if update_plot:
-                self.plot_data()
-            running = True
-            while running:
-                if counter % sample_update_period == 0:
-                    current_B, target = self.new_sample(batch_size, lattice, opterator, preconditioner,
-                                                        train_with_gmres)
-                counter += 1
-                self.training_step(counter, current_B, optimizer, target)
-                if (counter - 1) % check_period == 0:
-                    if update_plot:
-                        clear_output(wait=True)
-                        self.plot_data()
-                    running, lowest_mean, stop_counter = self.check_stop_conditions(counter, check_period, max_epoch,
-                                                                                    lowest_mean,
-                                                                                    running, min_mean_diff,
-                                                                                    stop_repetition_length,
-                                                                                    stop_counter)
-
-                # Sleep to protect CPU
-                sleep(0.1)
-
-            if update_plot:
-                clear_output(wait=True)
-                self.plot_data()
-            print("\n" + "Goal reached!")
-
-        except KeyboardInterrupt:
-            if update_plot:
-                clear_output(wait=True)
-                self.plot_data()
-            print("\n" + "Training stopped manually!")
-
-    def save_parameters(self, model_name):
-        torch.save(self.module.state_dict(), "config/Saved_paras/" + model_name + ".pth")
+    def save_parameters(self, file_name):
+        torch.save(self.module.state_dict(), "config/Saved_paras/" + file_name + ".pth")
 
     def save_plot(self, file_name):
         with open("config/Saved_plots/" + file_name + ".txt", "w") as file:
@@ -122,60 +68,10 @@ class DwcTrainer:
         with open("config/Saved_structures/" + file_name + ".pkl", 'wb') as f:
             pickle.dump(self.structure, f)
 
-    def add_mean_and_var(self):
-        if len(self.epoch_list) > 0:
-            last_epoch = self.epoch_list[-1]
-            if len(self.loss_list) < 50:
-                last_loss = self.loss_list[-1]
-                plt.annotate(f'Last Epoch: {last_epoch}, Last Loss: {last_loss:.2f}', xy=(last_epoch, last_loss),
-                             xytext=(20, 20),
-                             textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
-            else:
-                loss_tensor = torch.tensor(self.loss_list[-50:])
-                loss_mean = torch.mean(loss_tensor).item()
-                loss_var = torch.std(loss_tensor).item()
-                plt.annotate(f'Last Epoch: {last_epoch}, Mean: {loss_mean:.2f}, Variance: {loss_var:.2f}',
-                             xy=(last_epoch, loss_mean), xytext=(20, 20),
-                             textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
-
-    def set_plot_base(self):
-        plt.plot(self.epoch_list, self.loss_list, marker='o', linestyle='-', markersize=0.1)
-        plt.yscale('log')
-        plt.xlabel('Epoch')
-        plt.ylabel('Loss')
-        plt.title("Update Plot")
-        plt.grid(True)
-
-    def check_stop_conditions(self, counter, feedback_timer, hard_stop, lowest_mean, running, stop_condition,
-                              stop_condition_length, stop_counter):
-        if counter > stop_condition_length:
-            current_mean = torch.mean(torch.tensor(self.loss_list[-stop_condition_length:]))
-            if lowest_mean - stop_condition < current_mean:
-                stop_counter += 1
-            else:
-                stop_counter = 0
-                lowest_mean = current_mean.clone()
-            if stop_counter == stop_condition_length // feedback_timer:
-                running = False
-        if counter > hard_stop:
-            running = False
-        return running, lowest_mean, stop_counter
-
-    def training_step(self, counter, current_B, optimizer, target):
-        # zeroing gradients
-        optimizer.zero_grad()
-        # Calculating the loss
-        loss = loss_fn(self.module(current_B), target)
-        # Backward pass
-        loss.backward()
-        # changing parameters
-        optimizer.step()
-        # Appending epoch and loss values to lists
-        self.epoch_list.append(counter)
-        self.loss_list.append(loss.item())
-
-    def init_training_constants(self, small):
+    # Can be stopped and resumed
+    def interactive_training(self, small=False, train_with_gmres=False, sample_update_period=1, hard_stop=4000):
         global best_preconditioner, best_preconditioner_small
+
         if small:
             opterator = D_WC(M, GAUGE_FIELD_SMALL)
             preconditioner = best_preconditioner_small
@@ -184,14 +80,113 @@ class DwcTrainer:
             opterator = D_WC(M, GAUGE_FIELD)
             preconditioner = best_preconditioner
             lattice = LATTICE
-        return lattice, opterator, preconditioner
+        if train_with_gmres:
+            assert DEFAULT_BATCH_SIZE == 1, "Default Batch size must be 1 to training with GMRES!"
+        else:
+            preconditioner = None
 
-    def new_sample(self, batch_size, lattice, opterator, preconditioner, train_with_gmres):
+        try:
+            # Start conditions
+            counter = len(self.epoch_list)
+            current_B, target = self.new_sample(lattice, opterator, preconditioner)
+            lowest_mean = 1e6
+            stop_counter = 0
+            plot("Update Plot", self.epoch_list, self.loss_list)
+            converged = False
+            while not converged:
+                if counter % sample_update_period == 0:
+                    current_B, target = self.new_sample(lattice, opterator, preconditioner)
+                counter += 1
+                self.training_step(current_B, target)
+                self.epoch_list.append(counter)
+                # Sleep to protect CPU
+                sleep(0.1)
+
+                if (counter - 1) % 10 == 0:
+                    clear_output(wait=True)
+                    self.plot_data()
+                    converged, lowest_mean = self.check_if_converged(counter, lowest_mean, stop_counter)
+                    if counter > hard_stop:
+                        break
+
+            clear_output(wait=True)
+            plot("Update Plot", self.epoch_list, self.loss_list)
+            print("\n" + "Goal reached!")
+
+        except KeyboardInterrupt:
+            clear_output(wait=True)
+            plot("Update Plot", self.epoch_list, self.loss_list)
+            print("\n" + "Training stopped manually!")
+
+    # intended to be used with untrained model
+    def scripted_training(self, small=False):
+        assert DEFAULT_BATCH_SIZE == 1, "Default Batch size must be 1 to training with GMRES!"
+        if small:
+            opterator = D_WC(M, GAUGE_FIELD_SMALL)
+            lattice = LATTICE_SMALL
+        else:
+            opterator = D_WC(M, GAUGE_FIELD)
+            lattice = LATTICE
+
+        # First train the model without gmres:
+        self.epoch_list = []
+        self.loss_list = []
+        counter = 0
+        lowest_mean = 1e6
+        stop_counter = 0
+        converged = False
+        while not converged:
+            current_B, target = self.new_sample(lattice, opterator, None)
+            counter += 1
+            self.training_step(current_B, target)
+            self.epoch_list.append(counter)
+            # Sleep to protect CPU
+            sleep(0.1)
+            if (counter - 1) % 10 == 0:
+                converged, lowest_mean = self.check_if_converged(counter, lowest_mean, stop_counter)
+
+        # Resume training with gmres and the now trained model itself as preconditioner
+        stop_counter = 0
+        while True:
+            current_B, target = self.new_sample(lattice, opterator, self.module)
+            counter += 1
+            self.training_step(current_B, target)
+            self.epoch_list.append(counter)
+            # Sleep to protect CPU
+            sleep(0.1)
+            if (counter - 1) % 10 == 0:
+                converged, lowest_mean = self.check_if_converged(counter, lowest_mean, stop_counter)
+
+    def training_step(self, current_B, target):
+        # defining function for parameters to minimize
+        loss = loss_fn(self.module(current_B), target)
+        # calculating parameter gradients
+        loss.backward()
+        # changing parameters
+        self.optimizer.step()
+        # zeroing gradients
+        self.optimizer.zero_grad()
+        self.loss_list.append(loss.item())
+
+    def new_sample(self, lattice, opterator, preconditioner):
         with torch.no_grad():
-            if train_with_gmres:
-                current_B = torch.rand(batch_size, *lattice, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
-                target = gmres(opterator, current_B, preconditioner, preconditioner(current_B))[0]
+            rand_field = torch.rand(DEFAULT_BATCH_SIZE, *lattice, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
+            if preconditioner is not None:
+                target = gmres_precon(opterator, rand_field, preconditioner)[0]
+                current_B = rand_field
             else:
-                target = torch.rand(batch_size, *lattice, GAUGE_DOF, NON_GAUGE_DOF, dtype=torch.complex64)
-                current_B = opterator(target)
+                target = rand_field
+                current_B = opterator(rand_field)
         return current_B, target
+
+    def check_if_converged(self, counter, lowest_mean, stop_counter):
+        if counter > 100:
+            current_mean = torch.mean(torch.tensor(self.loss_list[-100:]))
+            if lowest_mean - 1e-2 < current_mean:
+                stop_counter += 1
+            else:
+                stop_counter = 0
+                lowest_mean = current_mean.clone()
+            if stop_counter == 10:
+                return True, lowest_mean
+        return False, lowest_mean

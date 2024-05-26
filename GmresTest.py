@@ -1,5 +1,5 @@
 from config.Constants import *
-from config.GMRES import gmres
+from config.GMRES import gmres, gmres_precon
 from config.Operators import D_WC, nn
 from config.LoadData import load_trained_module
 import matplotlib.pyplot as plt
