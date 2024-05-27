@@ -28,3 +28,15 @@ def load_structure(saved_module_name):
     with open(structure_data_path, 'rb') as f:
         structure = pickle.load(f)
     return structure
+
+
+def load_gmres_data(saved_module_name):
+    epoch_list = []
+    itergain_list = []
+    plot_data_path = "config/Saved_itergain_plots/" + saved_module_name + "_iter.txt"
+    with open(plot_data_path, 'r') as file:
+        for line in file:
+            epoch, loss = line.strip().split('\t')
+            epoch_list.append(int(epoch))
+            itergain_list.append(float(loss))
+    return epoch_list, itergain_list
