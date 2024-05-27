@@ -3,15 +3,14 @@ import torch
 from config.LoadData import load_plot_data
 
 
-def plot_file(file_name, logarithmic=True, save_as_png=False):
+def plot_file(file_name):
     epoch_list, loss_list = load_plot_data(file_name)
     plot(file_name, epoch_list, loss_list)
 
 
 def plot(name, epoch_list, loss_list):
     plt.plot(epoch_list, loss_list, marker='o', linestyle='-', markersize=0.1)
-    if logarithmic:
-        plt.yscale('log')
+    plt.yscale('log')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.title(name)
@@ -30,7 +29,4 @@ def plot(name, epoch_list, loss_list):
         plt.annotate(f'Last Epoch: {last_epoch}, Mean: {loss_mean:.2f}, Variance: {loss_var:.2f}',
                      xy=(last_epoch, loss_mean), xytext=(20, 20),
                      textcoords='offset points', arrowprops=dict(arrowstyle='->', color='black'))
-    if save_as_png:
-        plt.savefig("Saved_plot_figures/" + name + "_plot.png")
-    else:
-        plt.show()
+    plt.show()

@@ -5,7 +5,7 @@ from config.LoadData import load_trained_module
 import matplotlib.pyplot as plt
 
 
-def gmres_test(Module: nn.Module = None, saved_module_name=None, small=False, max_iter=1000, tol=1e-2):
+def gmres_test(Module: nn.Module = None, saved_module_name=None, small=False, max_iter=1000, tol=1e-3):
     b = create_sample(small)
     operator = init_dwc(small)
 
@@ -13,26 +13,14 @@ def gmres_test(Module: nn.Module = None, saved_module_name=None, small=False, ma
         preconditioner = load_trained_module(Module, saved_module_name)
         for param in preconditioner.parameters():  # Disable grad calculation for better performance
             param.requires_grad = False
-        field, steps, res_list, time_taken = gmres(operator, b, preconditioner, preconditioner(b), max_iter=max_iter,
-                                                   tol=tol, print_res=False)
+        field, steps, time_taken = gmres_precon(operator, b, preconditioner, max_iter=max_iter, tol=tol, print_res=True)
 
     else:
         saved_module_name = "none"
-        field, steps, res_list, time_taken = gmres(operator, b, max_iter=max_iter, tol=tol, print_res=False)
+        field, steps, time_taken = gmres(operator, b, max_iter=max_iter, tol=tol, print_res=True)
 
     error = torch.norm((operator(field) - b).view(-1))
-    safe_result_as_png(saved_module_name, res_list, steps, error, time_taken)
-
-
-def safe_result_as_png(saved_module_name ,res_list, steps, error, time_taken):
-    step_list = list(range(1, steps + 1))
-    plt.plot(step_list, res_list, marker='o', linestyle='-', markersize=0.1)
-    plt.xlabel('Iteration')
-    plt.yscale('log')
-    plt.ylabel('Residual')
-    plt.title(f"module: {saved_module_name} | error: {error:.3e} | time: {time_taken:.0f}ms | steps: {steps} iterations")
-    plt.grid(True)
-    plt.savefig("Saved_gmres_results/" + saved_module_name + "_test.png")
+    print(f"module: {saved_module_name} | error: {error:.3e} | time: {time_taken:.0f}ms | steps: {steps} iterations")
 
 
 def init_dwc(small):

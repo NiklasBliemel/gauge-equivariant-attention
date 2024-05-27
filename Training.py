@@ -19,6 +19,7 @@ def train_module(Module: nn.Module, structure: tuple, small=False):
     dwc_trainer = DwcTrainer(module, structure)
     dwc_trainer.scripted_training(small=small)
     dwc_trainer.save_data_as(save_name)
+    dwc_trainer.save_itergain_plot(save_name + "_iter")
 
 
 def choose_save_name(module, structure, small):
@@ -34,5 +35,5 @@ def choose_save_name(module, structure, small):
         if isinstance(num, int):
             save_name += "_" + str(num)
     if not small:
-        save_name = save_name.capitalize()
+        save_name += "_big"
     return save_name

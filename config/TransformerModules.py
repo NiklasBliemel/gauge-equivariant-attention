@@ -91,13 +91,15 @@ class PTC(nn.Module):
         self.PTC_layers = nn.ModuleList(
             [nn.Sequential(NonGaugeLinear(input_dof, output_dof), T(p, gauge_field)) for p
              in path_list])
+        self.num_pathes = len(path_list)
+        self.input_dof = input_dof
 
     def forward(self, field):
         out = self.PTC_layers[0](field)
         for index in range(1, len(self.PTC_layers)):
             out += self.PTC_layers[index](field)
         # print("PTC mean: ", torch.mean(torch.abs(out)))
-        return out
+        return out / (self.num_pathes * self.input_dof) ** 0.5
 
     def gauge_tra(self, new_gauge):
         for layer in self.PTC_layers:
