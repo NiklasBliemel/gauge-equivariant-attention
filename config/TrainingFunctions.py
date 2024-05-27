@@ -142,11 +142,11 @@ class DwcTrainer:
             sleep(0.1)
             if counter % 10 == 0:
                 converged, lowest_mean, stop_counter = self.check_if_converged(counter, lowest_mean, stop_counter)
-            if stop_counter == 5 or (counter % 50 == 0 and counter > 100):
-                pure_gmres_iter = gmres_train(opterator, current_B)
-                iter_gain = gmres_precon_train(opterator, current_B, self.module, pure_gmres_iter)
-                self.gmres_epoch_list.append(counter)
-                self.gmres_itergain_list.append(iter_gain)
+                if stop_counter == 5 or (counter % 50 == 0 and counter > 100):
+                    pure_gmres_iter = gmres_train(opterator, current_B)
+                    iter_gain = gmres_precon_train(opterator, current_B, self.module, pure_gmres_iter)
+                    self.gmres_epoch_list.append(counter)
+                    self.gmres_itergain_list.append(iter_gain)
             counter += 1
 
         # Resume training with gmres and the now trained model itself as preconditioner
@@ -160,11 +160,11 @@ class DwcTrainer:
             sleep(0.1)
             if counter % 10 == 0:
                 converged, lowest_mean, stop_counter = self.check_if_converged(counter, lowest_mean, stop_counter)
-            if stop_counter == 5 or (counter % 50 == 0 and counter > 100):
-                pure_gmres_iter = gmres_train(opterator, current_B)
-                iter_gain = gmres_precon_train(opterator, current_B, self.module, pure_gmres_iter)
-                self.gmres_epoch_list.append(counter)
-                self.gmres_itergain_list.append(iter_gain)
+                if stop_counter == 5 or (counter % 50 == 0 and counter > 100):
+                    pure_gmres_iter = gmres_train(opterator, current_B)
+                    iter_gain = gmres_precon_train(opterator, current_B, self.module, pure_gmres_iter)
+                    self.gmres_epoch_list.append(counter)
+                    self.gmres_itergain_list.append(iter_gain)
             counter += 1
 
     def training_step(self, current_B, target):
