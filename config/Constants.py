@@ -3,9 +3,11 @@ import numpy as np
 
 
 """""
-Here we define all the important global constants defining the L-QCD config.
-In addition the used gauge-field and the gamma-matrices, c_sw-constant and mass-constant for Dwc are defined here.
+Here we define all the important global constants defining the L-QCD configuration.
+For example the used gauge-field and the gamma-matrices, c_sw-constant and mass for Dwc are defined here.
 Also the Path's used by the PTC module are here predefined.
+If you want to try different configurations change them to your liking. 
+(the used gauge field can be found here: https://arxiv.org/pdf/2302.05419)
 """""
 
 

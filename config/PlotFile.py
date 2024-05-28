@@ -35,11 +35,11 @@ def plot(name, epoch_list, loss_list):
 def itergain_plot():
     epoch_list_ptc, loss_list_ptc = load_plot_data('ptc_4_4')
     epoch_list_super_ptc, loss_list_super_ptc = load_plot_data('super_ptc_4')
-    epoch_list_tra, loss_list_tra = load_plot_data('tr_4_16')
+    epoch_list_tra, loss_list_tra = load_plot_data('at_4_16')
 
     gmres_epochs_ptc, gmres_itergain_ptc = load_gmres_data('ptc_4_4')
     gmres_epochs_sptc, gmres_itergain_sptc = load_gmres_data('super_ptc_4')
-    gmres_epochs_tra, gmres_itergain_tra = load_gmres_data('tr_4_16')
+    gmres_epochs_tra, gmres_itergain_tra = load_gmres_data('at_4_16')
 
     fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(10, 8))
 
