@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from IPython.display import clear_output
 import torch.optim as optim
 import pickle
@@ -6,20 +5,19 @@ from time import sleep
 from config.Constants import *
 from config.LoadData import load_trained_module
 from config.PlotFile import plot
-from config.Operators import D_WC
-from config.TransformerModules import PTC, Transformer
-from config.GMRES import gmres, gmres_precon, gmres_train, gmres_precon_train
+from config.LqcdOperators import D_WC
+from nnModules import GaugeCovAttention
+from config.GMRES import gmres_precon, gmres_train, gmres_precon_train
 
 
-# the loss function defines how far the module output is off the desired target (it shall be minimized)
+# the loss function defines how far the module output is off the desired target; it shall be minimized :)
 def loss_fn(module_output, target):
     diff = (module_output - target).view(-1)
     return torch.norm(diff) / target.shape[0] ** (1 / 2)
 
 
-# in the training function there will be the option to use gmres for target generation, there a
-# preconditioner can be deployed to cut calculation time
-best_preconditioner = load_trained_module(Transformer, "tr_4_16")
+# choose the best model as preconditioner for interactive training with gmres
+best_preconditioner = load_trained_module(GaugeCovAttention, "at_4_16")
 for param in best_preconditioner.parameters():
     param.requires_grad = False
     
@@ -29,11 +27,16 @@ The Class DwcTrainer is a class designed for training a nn.Module to become a go
 with GMRES.
 To achieve this the Module should approximate the inverse of Dwc by minimizing the loss function in two possible ways.
 One way is to calculate b = Dwc(x) for random x and then use Module on b to revert it back to x.
-The other way is to use GMRES on a random b to calculate the exact x_gmres (with small error) an then to use the Module also 
-on b to approximate the GMRES solution x_gmres with it.
+The other way is to use GMRES on a random b to calculate the exact solution (with small error) an then to use the 
+Module also on b to approximate the GMRES solution x_gmres with it.
 Further there is the option to train on large (8^3 x 16) or small (4^3 x 8) Lattice.
-In addition DwcTrainer has the option to save all important data of the Training (Module parameters and structure and the
-training plot-data.
+In addition DwcTrainer has a function to save all important data of the Training (Module parameters and structure and the
+training plot-data) so you will be able to load the trained model for other purposes.
+The scripted_training will start training the model with the first method until it converged sufficiently and then
+continue training the model with the second method, using itself as preconditioner. This training function is best used
+for a final test for a working architecture as a not working model will make gmres diverge in the second phase.
+Additionally relative iteration gain compared to pure gmres will be tested during scripted training repeatedly, use 
+save_itergain_plot to save iteration gain data.
 """""
 
 
@@ -142,7 +145,7 @@ class DwcTrainer:
             sleep(0.1)
             if counter % 10 == 0:
                 converged, lowest_mean, stop_counter = self.check_if_converged(counter, lowest_mean, stop_counter)
-                if stop_counter == 5 or (counter % 50 == 0 and counter > 100):
+                if stop_counter == 5 or (counter % 100 == 0 and counter > 100):
                     pure_gmres_iter = gmres_train(opterator, current_B)
                     iter_gain = gmres_precon_train(opterator, current_B, self.module, pure_gmres_iter)
                     self.gmres_epoch_list.append(counter)
@@ -160,7 +163,7 @@ class DwcTrainer:
             sleep(0.1)
             if counter % 10 == 0:
                 converged, lowest_mean, stop_counter = self.check_if_converged(counter, lowest_mean, stop_counter)
-                if stop_counter == 5 or (counter % 50 == 0 and counter > 100):
+                if stop_counter == 5 or (counter % 100 == 0 and counter > 100):
                     pure_gmres_iter = gmres_train(opterator, current_B)
                     iter_gain = gmres_precon_train(opterator, current_B, self.module, pure_gmres_iter)
                     self.gmres_epoch_list.append(counter)

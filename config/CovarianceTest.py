@@ -1,6 +1,5 @@
-import torch
 from config.BasicFunctions import *
-from config.TransformerModules import nn, Transformer, PTC, SuperPtc
+from nnModules import nn
 
 """""
 Test if your module is gauge_covariant by transforming field before and after applying module and calculating the

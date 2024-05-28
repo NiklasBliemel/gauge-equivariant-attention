@@ -1,4 +1,4 @@
-from config.TransformerModules import nn
+from nnModules import nn
 import pickle
 import torch
 

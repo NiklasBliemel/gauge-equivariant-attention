@@ -1,10 +1,10 @@
-from config.Constants import *
-from config.TransformerModules import nn, Transformer, PTC, SuperPtc
-from config.LoadData import load_trained_module, load_structure
+from nnModules import nn, GaugeCovAttention, PTC, SuperPtc
 from config.TrainingFunctions import DwcTrainer
 
 """""
-Train Modules until sufficiently converged.
+Train Modules until sufficiently converged. Test iteration gain with gmres after each 50 training steps or
+when converging.
+To train a new promising model, import it from nnModules.py and add it to choose_save_name
 
 Structures:
 * Ptc(NON_GAUGE_DOF, NON_GAUGE_DOF, PTC_PATHES, GAUGE_FIELD)
@@ -23,8 +23,8 @@ def train_module(Module: nn.Module, structure: tuple, small=False):
 
 
 def choose_save_name(module, structure, small):
-    if isinstance(module, Transformer):
-        save_name = "tr"
+    if isinstance(module, GaugeCovAttention):
+        save_name = "at"
     elif isinstance(module, PTC):
         save_name = "ptc"
     elif isinstance(module, SuperPtc):
