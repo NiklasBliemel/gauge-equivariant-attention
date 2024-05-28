@@ -1,5 +1,5 @@
 from config.BasicFunctions import *
-from config.Operators import nn, T
+from config.LqcdOperators import nn, T
 import time
 
 
@@ -12,6 +12,19 @@ For more detailed information on how the Attention model works, refer to:
 https://proceedings.neurips.cc/paper_files/paper/2017/file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf
 In addition the the attention model, also the Parallel Transport Convolution Layer is implemented here for comparison.
 Details to that are found in https://arxiv.org/pdf/2302.05419
+
+This section shall also serve as a testing ground for improvements and new ideas for the attention model or other
+architectures.
+ 
+Quick guide to implement your own model:
+* Study the pytorch nn library
+* Use implemented submodules or create your own to construct your own architecture
+* Use covariance_test from CovarianceTest.py to test if your architecture maintains gauge symmetries
+* Train your model using DwcTrainer class in TrainingFunctions.py
+* If trained sufficiently use gmres_test form GmresTest.py to test your models performance as preconditioner
+* If your model works, use train_module form Training.py to compare it with the other models. Make sure to add your 
+  models class to Training.py as described in that file.
+* Include your model to itergain_plot from PlotFile.py and use it to generate a plot for comparison
 """""
 
 
@@ -155,9 +168,8 @@ class PE_4D(nn.Module):
     def gauge_tra(self, new_gauge):
         self.pe_tensor = gauge_tra(self.pe_tensor, new_gauge)
 
-        # Direction - Based linear + Super-gauge-field
 
-
+# Direction based linear + Super-gauge-field
 class SuperPtc(nn.Module):
     def __init__(self, gauge_field, input_non_gauge_dof):
         super(SuperPtc, self).__init__()
@@ -183,83 +195,52 @@ class SuperPtc(nn.Module):
         temp = make_super_gauge_field(self.gauge_field)
         self.super_gauge_field = temp.reshape(self.volume, self.volume, *self.gauge_field.shape[-2:])
 
-        # Core of the SA mechanism. Converts Attention field (3x3 Matrices) into scalar filed using covariant nature of the Trace
-        # finally converting Attention into percentage using Softmax and scaling the Super-gauge-field with them
-
 
 class SuperGaugeFieldSoftmax(nn.Module):
-    def __init__(self, volume, gauge_field, show_time):
+    def __init__(self, volume, gauge_field):
         super(SuperGaugeFieldSoftmax, self).__init__()
         self.volume = volume
-
-        start_time_sgf = time.time()
         temp = make_super_gauge_field(gauge_field)
         self.super_gauge_field = temp.reshape(self.volume, self.volume, *gauge_field.shape[-2:])
         self.softmax = nn.Softmax(dim=-1)
-        end_time = time.time()
-        execution_time = end_time - start_time_sgf
-        print(f"SuperGaugeField in: {execution_time * 1e3:.3f} ms") if show_time else None
 
-    def forward(self, attention_scores, show_time):
+    def forward(self, attention_scores):
         effect = self.softmax(attention_scores)
-
-        # print(torch.sum(effect[0,0]))
-        # print(f"Attention Matrix:\n", effect.reshape(1, 4,4,4,8, 4,4,4,8)[0, 0,0,:,:, 0,0,1,2])
-
-        start = time.time()
         out = torch.mul(self.super_gauge_field.permute(2, 3, 0, 1).unsqueeze(0), effect).permute(0, 3, 4, 1, 2)
-        end = time.time()
-        print(f"Scaling SGF in: {(end - start) * 1e3:.3f} ms") if show_time else None
         return out
 
     def gauge_tra(self, tra_gauge):
         temp = make_super_gauge_field(tra_gauge)
         self.super_gauge_field = temp.reshape(self.volume, self.volume, *tra_gauge.shape[-2:])
 
-        # calculates similarity between queries and keys (based on how orthogonal they are) than adds values scaled with
-        # their respective similarity
-
 
 class SelfAttention(nn.Module):
-    def __init__(self, gauge_field, show_time):
+    def __init__(self, gauge_field):
         super(SelfAttention, self).__init__()
         self.gauge_field = gauge_field
         lattice = gauge_field.shape[1:-2]
         self.volume = 1
         for dim_size in lattice:
             self.volume *= dim_size
-        self.activation = SuperGaugeFieldSoftmax(self.volume, self.gauge_field, show_time)
+        self.activation = SuperGaugeFieldSoftmax(self.volume, self.gauge_field)
 
-    def forward(self, queries, keys, values, show_time):
+    def forward(self, queries, keys, values):
         queries_shape = queries.shape
         keys_shape = keys.shape
-
-        # Split queries and keys into 4 Heads, one for each dimension
+        # flatten Lattice dimensions of queries and keys and split spin-dim into 4 Heads
         queries = queries.reshape(queries_shape[0], self.volume, queries_shape[-2], -1, 4).permute(0, 4, 1, 2, 3)
         keys = keys.reshape(keys_shape[0], self.volume, keys_shape[-2], -1, 4).permute(0, 4, 1, 2, 3)
-
-        start_time_attention = time.time()
+        # make gauge eq. h-dim^2 matrices via matmul with itself for each head
+        # then flatten matrices and concat heads -> (volume x head-dim^3) Matrix (for queries and keys)
         invariant_queries = torch.real(torch.matmul(dagger(queries), queries))
         invariant_queries = invariant_queries.permute(0, 2, 3, 4, 1).reshape(queries_shape[0], self.volume, -1)
         invariant_keys = torch.real(torch.matmul(dagger(keys), keys))
         invariant_keys = invariant_keys.permute(0, 2, 3, 4, 1).reshape(keys_shape[0], self.volume, -1)
+        # matmul queries and keys -> result is similar to trace(Q dagger(K) K dagger(Q)) but a lot faster
         attention_scores = torch.matmul(invariant_queries, invariant_keys.transpose(-2, -1))
-        end_time = time.time()
-        execution_time = end_time - start_time_attention
-        print(f"MltiHeadTr(dagger(q) q dagger(k) k) in: {execution_time * 1e3:.3f} ms") if show_time else None
-
-        start_time_activation = time.time()
-        attention = self.activation((attention_scores / invariant_queries.shape[-1]) ** 0.5, show_time)
-        end_time = time.time()
-        execution_time = end_time - start_time_activation
-        print(f"Activation in: {execution_time * 1e3:.3f} ms") if show_time else None
-
-        start_time_add = time.time()
+        attention = self.activation((attention_scores / invariant_queries.shape[-1]) ** 0.5)
+        # summ values with respective attention value and sgf path and reshape into original field shape
         out = torch.einsum("Nnmis,Nnmsj->Nnij", [attention, values])
-        end_time = time.time()
-        execution_time = end_time - start_time_add
-        print(f"Transforming and Adding Values in: {execution_time * 1e3:.3f} ms") if show_time else None
-
         out = out.reshape(*queries_shape[:-1], -1)
         return out
 
@@ -267,14 +248,10 @@ class SelfAttention(nn.Module):
         self.gauge_field = gauge_tra(self.gauge_field, new_gauge, field_is_gauge_field=True)
         self.activation.gauge_tra(self.gauge_field)
 
-        # Transformer creates queries and keys with a 4 - Block style linear (each block representing a Dimension of the lattice)
-        # values are created using path based linear to mimic the operations in DW_C
 
-
-class Transformer(nn.Module):
-    def __init__(self, gauge_field, input_non_gauge_dof, linear_size, show_time=False):
-        super(Transformer, self).__init__()
-        start_time = time.time()
+class GaugeCovAttention(nn.Module):
+    def __init__(self, gauge_field, input_non_gauge_dof, linear_size):
+        super(GaugeCovAttention, self).__init__()
         lattice = gauge_field.shape[1:-2]
         lattice_dof = len(lattice)
         pe_output_size = lattice_dof * input_non_gauge_dof
@@ -282,53 +259,22 @@ class Transformer(nn.Module):
 
         assert linear_size & lattice_dof == 0, "linear Size must be dividable by 4!"
 
-        # Transformations
         self.norm_field_scale = nn.Parameter(torch.tensor(7, dtype=torch.complex64))
-
-        start_time_pe = time.time()
         self.pe = PE_4D(gauge_field, input_non_gauge_dof)
-        end_time = time.time()
-        execution_time = end_time - start_time_pe
-        print(f"PE in: {execution_time * 1e3:.3f} ms") if show_time else None
-
         self.W_Q = ReducedNonGaugeLinear(pe_output_size, linear_size)
         self.W_K = ReducedNonGaugeLinear(pe_output_size, linear_size)
-
-        start_time_dir = time.time()
         self.W_V = PathBasedLinear(input_non_gauge_dof, lattice)
-        end_time = time.time()
-        execution_time = end_time - start_time_dir
-        print(f"DirectionBasedLinear in: {execution_time * 1e3:.3f} ms") if show_time else None
+        self.self_attention = SelfAttention(gauge_field)
 
-        self.self_attention = SelfAttention(gauge_field, show_time)
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(f"Transformer in: {execution_time * 1e3:.3f} ms") if show_time else None
-
-    def forward(self, field, show_time=False):
+    def forward(self, field):
         dims = tuple(range(1, len(field.shape)))
         norm_field = self.norm_field_scale * field / torch.sum(torch.matmul(dagger(field), field), dim=dims) ** 0.5
 
-        start_time = time.time()
         queries = self.W_Q(self.pe(norm_field))
         keys = self.W_K(self.pe(norm_field))
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(f"Queries Keys in: {execution_time * 1e3:.3f} ms") if show_time else None
-
-        start_time_values = time.time()
         values = self.W_V(field)
-        end_time = time.time()
-        execution_time = end_time - start_time_values
-        print(f"Values in: {execution_time * 1e3:.3f} ms") if show_time else None
 
-        # print("Values Mean: ", torch.mean(torch.abs(values)))
-        out = self.self_attention(queries, keys, values, show_time)
-        # print("SA mean: ", torch.mean(torch.abs(out)))
-        end_time = time.time()
-        execution_time = end_time - start_time
-        print(f"Everything in: {execution_time * 1e3:.3f} ms") if show_time else None
-
+        out = self.self_attention(queries, keys, values)
         return out
 
     def gauge_tra(self, new_gauge):

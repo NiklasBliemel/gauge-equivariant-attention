@@ -32,7 +32,7 @@ def plot(name, epoch_list, loss_list):
     plt.show()
 
 
-def sigma_plot():
+def itergain_plot():
     epoch_list_ptc, loss_list_ptc = load_plot_data('ptc_4_4')
     epoch_list_super_ptc, loss_list_super_ptc = load_plot_data('super_ptc_4')
     epoch_list_tra, loss_list_tra = load_plot_data('tr_4_16')
@@ -54,6 +54,6 @@ def sigma_plot():
     ax2.plot(gmres_epochs_sptc, gmres_itergain_sptc, 'g', label='SuperPtc', linestyle='', marker='x', markersize=5)
     ax2.plot(gmres_epochs_tra, gmres_itergain_tra, 'r', label='Attention', linestyle='', marker='s', markersize=5)
     ax2.set_xlabel('Training step')
-    ax2.set_ylabel('GMRES Iterations')
+    ax2.set_ylabel('Relative Iteration gain')
     ax2.legend()
     plt.show()

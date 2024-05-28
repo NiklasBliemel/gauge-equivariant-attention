@@ -1,8 +1,14 @@
 from config.Constants import *
 from config.GMRES import gmres, gmres_precon
-from config.Operators import D_WC, nn
+from config.LqcdOperators import D_WC, nn
 from config.LoadData import load_trained_module
 import matplotlib.pyplot as plt
+
+"""""
+Test a trained models performance as preconditioner in GMRES. Watch the residual evolution, compare it with pure gmres
+or other models.
+gmres_test() runs without preconditioner if none is given.
+"""""
 
 
 def gmres_test(Module: nn.Module = None, saved_module_name=None, small=False, max_iter=1000, tol=1e-3):
@@ -11,13 +17,11 @@ def gmres_test(Module: nn.Module = None, saved_module_name=None, small=False, ma
 
     if Module is not None and saved_module_name is not None:
         preconditioner = load_trained_module(Module, saved_module_name)
-        for param in preconditioner.parameters():  # Disable grad calculation for better performance
-            param.requires_grad = False
-        field, steps, time_taken = gmres_precon(operator, b, preconditioner, max_iter=max_iter, tol=tol, print_res=True)
+        field, steps, time_taken = gmres_precon(operator, b, preconditioner, max_iter=max_iter, tol=tol)
 
     else:
         saved_module_name = "none"
-        field, steps, time_taken = gmres(operator, b, max_iter=max_iter, tol=tol, print_res=True)
+        field, steps, time_taken = gmres(operator, b, max_iter=max_iter, tol=tol)
 
     error = torch.norm((operator(field) - b).view(-1))
     print(f"module: {saved_module_name} | error: {error:.3e} | time: {time_taken:.0f}ms | steps: {steps} iterations")
