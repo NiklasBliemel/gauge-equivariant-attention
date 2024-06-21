@@ -54,7 +54,6 @@ def gmres_precon(operator: nn.Module, b: torch.Tensor, preconditioner: nn.Module
     b_shape = b.shape
     H = torch.zeros(max_iter + 1, max_iter, dtype=torch.complex64)
     V = torch.zeros(n, max_iter + 1, dtype=torch.complex64)
-    Z = torch.zeros(n, max_iter, dtype=torch.complex64)
     e1 = torch.zeros(max_iter + 1, dtype=torch.complex64)
     with torch.no_grad():
         x0 = preconditioner(b)
@@ -63,8 +62,8 @@ def gmres_precon(operator: nn.Module, b: torch.Tensor, preconditioner: nn.Module
         V[:, 0] = r_0 / e1[0]
 
         for i_index in range(max_iter):
-            Z[:, i_index] = preconditioner(V[:, i_index].reshape(b_shape)).view(-1)
-            w_temp = operator(Z[:, i_index].reshape(b_shape)).view(-1)
+            w_temp = preconditioner(V[:, i_index].reshape(b_shape)).view(-1)
+            w_temp = operator(w_temp.reshape(b_shape)).view(-1)
 
             for j_index in range(i_index + 1):
                 H[j_index, i_index] = torch.vdot(w_temp, V[:, j_index])
@@ -77,7 +76,7 @@ def gmres_precon(operator: nn.Module, b: torch.Tensor, preconditioner: nn.Module
             if res < tol:
                 break
 
-        x_out = x0 + torch.matmul(Z[:, :(i_index + 1)], y_i).reshape(b_shape)
+        x_out = x0 + torch.matmul(V[:, :(i_index + 1)], y_i).reshape(b_shape)
     return x_out, i_index + 1, (time() - time_before) * 1e3
 
 
@@ -117,7 +116,6 @@ def gmres_precon_train(operator: nn.Module, b: torch.Tensor, preconditioner: nn.
     b_shape = b.shape
     H = torch.zeros(pure_gmres_iter + 1, pure_gmres_iter, dtype=torch.complex64)
     V = torch.zeros(n, pure_gmres_iter + 1, dtype=torch.complex64)
-    Z = torch.zeros(n, pure_gmres_iter, dtype=torch.complex64)
     e1 = torch.zeros(pure_gmres_iter + 1, dtype=torch.complex64)
     with torch.no_grad():
         x0 = preconditioner(b)
@@ -126,8 +124,8 @@ def gmres_precon_train(operator: nn.Module, b: torch.Tensor, preconditioner: nn.
         V[:, 0] = r_0 / e1[0]
 
         for i_index in range(pure_gmres_iter):
-            Z[:, i_index] = preconditioner(V[:, i_index].reshape(b_shape)).view(-1)
-            w_temp = operator(Z[:, i_index].reshape(b_shape)).view(-1)
+            w_temp = preconditioner(V[:, i_index].reshape(b_shape)).view(-1)
+            w_temp = operator(w_temp.reshape(b_shape)).view(-1)
 
             for j_index in range(i_index + 1):
                 H[j_index, i_index] = torch.vdot(w_temp, V[:, j_index])
