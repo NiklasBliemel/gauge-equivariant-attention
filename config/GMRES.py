@@ -70,6 +70,7 @@ def gmres_precon(operator: nn.Module, b: torch.Tensor, preconditioner: nn.Module
                 w_temp -= H[j_index, i_index] * V[:, j_index]
             H[i_index + 1, i_index] = torch.norm(w_temp)
             V[:, i_index + 1] = w_temp / H[i_index + 1, i_index]
+
             y_i = torch.linalg.lstsq(H[:i_index + 2, :i_index + 1], e1[:i_index + 2]).solution
             res = torch.norm(torch.matmul(H[:i_index + 2, :i_index + 1], y_i) - e1[:i_index + 2])
 
